@@ -1,9 +1,3 @@
-CREATE DATABASE IF NOT EXISTS iguanautp
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE iguanautp;
-
 CREATE TABLE IF NOT EXISTS students (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
@@ -20,8 +14,7 @@ CREATE TABLE IF NOT EXISTS sightings (
   tamano VARCHAR(60) DEFAULT '',
   comportamiento VARCHAR(60) DEFAULT '',
   observaciones TEXT,
+  fecha DATE DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (student_id) REFERENCES students(id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
+  INDEX idx_student_id (student_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -165,7 +165,8 @@ async function addSighting() {
 
   if (!selectedPoint) { alert('Selecciona un punto rojo del mapa.'); return; }
 
-  const hora = document.getElementById('sel-hora').value;
+  const fecha = document.getElementById("sel-fecha").value;
+  const hora = document.getElementById("sel-hora").value;
   const num = document.getElementById('sel-num').value;
   const tamano = document.getElementById('sel-tamano').value;
   const comp = document.getElementById('sel-comp').value;
@@ -183,7 +184,8 @@ async function addSighting() {
         cantidad: num,
         tamano,
         comportamiento: comp,
-        observaciones: obs
+        observaciones: obs,
+        fecha: fecha || null
       })
     });
     const data = await res.json();
@@ -230,6 +232,7 @@ function addPin(cx, cy) {
 
 function clearForm() {
   ['sel-hora', 'sel-num', 'sel-tamano', 'sel-comp'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('sel-fecha').value = '';
   document.getElementById('txt-obs').value = '';
 }
 
@@ -245,7 +248,38 @@ function renderAllSightings(sightings, stats) {
     list.style.display = 'block';
     document.getElementById('sightings-items').innerHTML = sightings.slice(0, 5).map(s => `
       <div class="si-item">
-        <span class="si-badge">${(s.zone || '').slice(0, 16)}</span>
+        <span class="si-badge">${escHtml((s.zone || '').slice(0, 16))}</span>
+        <div>
+          <div class="si-title">${escHtml(s.cantidad)}${s.tamano ? ' · ' + escHtml(s.tamano) : ''}${s.comportamiento ? ' · ' + escHtml(s.comportamiento) : ''}</div>
+          <div class="si-meta">${escHtml(s.student_name || 'Anónimo')} · ${s.fecha || (s.created_at || '').slice(0, 10)} · ${escHtml(s.hora)} · ${(s.created_at || '').slice(11, 16)}${s.observaciones ? ' · ' + escHtml(s.observaciones.slice(0, 45)) : ''}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    list.style.display = 'none';
+  }
+
+  // Report data
+  document.getElementById('r-total').textContent = stats.total;
+  document.getElementById('r-hoy').textContent = stats.today;
+  document.getElementById('r-zonas').textContent = stats.zones;
+  const th = Object.entries(stats.hourDetail || {}).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById('r-hora').textContent = th ? th[0].split('(')[0].trim() : '-';
+
+  const zd = stats.zoneDetail || {};
+  const mz = Math.max(...Object.values(zd), 1);
+  document.getElementById('zona-bars').innerHTML = Object.keys(zd).length
+    ? Object.entries(zd).sort((a, b) => b[1] - a[1]).map(([z, c]) =>
+        `<div class="brow"><span class="blabel">${escHtml(z.slice(0, 18))}</span><div class="btrack"><div class="bfill" style="width:${Math.round(c / mz * 100)}%"></div></div><span class="bcount">${c}</span></div>`).join('')
+    : '<p style="font-size:13px;color:var(--text-secondary);">Aún no hay datos.</p>';
+
+  const cd = stats.compDetail || {};
+  const mc = Math.max(...Object.values(cd), 1);
+  document.getElementById('comp-bars').innerHTML = Object.keys(cd).length
+    ? Object.entries(cd).sort((a, b) => b[1] - a[1]).map(([c, n]) =>
+        `<div class="brow"><span class="blabel">${escHtml(c)}</span><div class="btrack"><div class="bfill" style="width:${Math.round(n / mc * 100)}%"></div></div><span class="bcount">${n}</span></div>`).join('')
+    : '<p style="font-size:13px;color:var(--text-secondary);">Aún no hay datos.</p>';
+}
+</span>
         <div>
           <div class="si-title">${s.cantidad}${s.tamano ? ' · ' + s.tamano : ''}${s.comportamiento ? ' · ' + s.comportamiento : ''}</div>
           <div class="si-meta">${s.student_name || 'Anónimo'} · ${s.hora} · ${(s.created_at || '').slice(11, 16)}${s.observaciones ? ' · ' + s.observaciones.slice(0, 45) : ''}</div>
@@ -418,17 +452,19 @@ async function loadHistory() {
     }
     if (empty) empty.style.display = 'none';
 
-    tbody.innerHTML = filtered.map(s => `
-      <tr>
-        <td><strong>${escHtml(s.student_name || 'Anónimo')}</strong></td>
-        <td>${escHtml(s.email || '—')}</td>
-        <td><span class="si-badge" style="font-size:12px;">${escHtml((s.zone || '').slice(0, 20))}</span></td>
-        <td>${escHtml(s.hora || '—')}</td>
-        <td>${escHtml(s.cantidad || '—')}</td>
-        <td>${escHtml(s.tamano || '—')}</td>
-        <td>${escHtml(s.comportamiento || '—')}</td>
-        <td style="white-space:nowrap;">${s.created_at ? s.created_at.slice(0, 10) + ' ' + s.created_at.slice(11, 16) : '—'}</td>
-      </tr>`).join('');
+    tbody.innerHTML = filtered.map(s => {
+      const fechaStr = s.fecha || (s.created_at || '').slice(0, 10);
+      return `<tr>
+        <td data-label="Nombre"><strong>${escHtml(s.student_name || 'Anónimo')}</strong></td>
+        <td data-label="Correo">${escHtml(s.email || '—')}</td>
+        <td data-label="Zona"><span class="si-badge" style="font-size:12px;">${escHtml((s.zone || '').slice(0, 20))}</span></td>
+        <td data-label="Hora">${escHtml(s.hora || '—')}</td>
+        <td data-label="Cantidad">${escHtml(s.cantidad || '—')}</td>
+        <td data-label="Tamaño">${escHtml(s.tamano || '—')}</td>
+        <td data-label="Comportamiento">${escHtml(s.comportamiento || '—')}</td>
+        <td data-label="Fecha" style="white-space:nowrap;">${fechaStr} ${(s.created_at || '').slice(11, 16)}</td>
+      </tr>`;
+    }).join('');
   } catch (_) {}
 }
 

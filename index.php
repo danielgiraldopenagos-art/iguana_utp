@@ -109,6 +109,7 @@
             Registrar avistamiento
           </h3>
           <div class="fr">
+            <input type="date" id="sel-fecha" class="fr-input">
             <select id="sel-hora">
               <option value="">-- Hora --</option>
               <option>Mañana (6-10 a.m.)</option>

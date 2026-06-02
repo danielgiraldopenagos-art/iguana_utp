@@ -436,3 +436,16 @@ button:focus, select:focus, textarea:focus, .tab:focus {
   .qopts { grid-template-columns: 1fr; }
   .qopt { font-size: 0.85rem; padding: 10px 12px; }
 }
+
+/* Date input en formulario */
+.fr input[type="date"] {
+  border: 1px solid rgba(82,106,88,0.18);
+  border-radius: 14px; background: var(--surface-soft);
+  color: var(--text-primary); padding: 12px 14px; outline: none;
+  width: 100%; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: var(--font-sans); font-size: 0.95rem;
+}
+.fr input[type="date"]:focus {
+  border-color: rgba(15,110,86,0.35);
+  box-shadow: 0 0 0 4px rgba(15,110,86,0.08);
+}

@@ -69,6 +69,7 @@ $cantidad  = trim($data['cantidad'] ?? '');
 $tamano    = trim($data['tamano'] ?? '');
 $comp      = trim($data['comportamiento'] ?? '');
 $obs       = trim($data['observaciones'] ?? '');
+$fecha     = trim($data['fecha'] ?? '');
 
 if ($studentId <= 0 || $zone === '' || $hora === '' || $cantidad === '') {
   jsonError('Faltan campos obligatorios (student_id, zone, hora, cantidad)');
@@ -82,10 +83,10 @@ if (!$check->fetch()) {
 }
 
 $stmt = $db->prepare('
-  INSERT INTO sightings (student_id, zone, hora, cantidad, tamano, comportamiento, observaciones)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO sightings (student_id, zone, hora, cantidad, tamano, comportamiento, observaciones, fecha)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ');
-$stmt->execute([$studentId, $zone, $hora, $cantidad, $tamano, $comp, $obs]);
+$stmt->execute([$studentId, $zone, $hora, $cantidad, $tamano, $comp, $obs, $fecha ?: null]);
 $id = (int)$db->lastInsertId();
 
 jsonResponse([

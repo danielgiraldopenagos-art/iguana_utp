@@ -1,22 +1,7 @@
-# Entorno local con MySQL + phpMyAdmin
-# Para desarrollo sin PlanetScale.
-#
-# Usar: docker compose up -d
-# Luego conectar con:
-#   Host: localhost
-#   Puerto: 3307
-#   DB: iguanautp
-#   User: iguana
-#   Pass: iguana123
-#
-# phpMyAdmin: http://localhost:8081 (root/iguana123)
-#
-# Para servir la app: php -S 0.0.0.0:8080 -t .
-
 services:
   db:
     image: mysql:8.0
-    container_name: iguana-db
+    container_name: iguana-db-local
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: iguana123
@@ -36,7 +21,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: iguana-pma
+    container_name: iguana-pma-local
     restart: unless-stopped
     depends_on:
       - db
