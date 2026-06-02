@@ -1,652 +1,104 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IguanaUTP 🦎 — Monitoreo de biodiversidad Campus UTP · Pereira</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
-  <style>
-    :root {
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --color-text-primary: #1a1a1a;
-      --color-text-secondary: #6b7280;
-      --color-background-primary: #ffffff;
-      --color-background-secondary: #f3f4f6;
-      --color-border-tertiary: #e5e7eb;
-      --color-border-secondary: #d1d5db;
-      --border-radius-md: 6px;
-      --border-radius-lg: 10px;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font-sans);
-      background: #f9fafb;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .wrapper {
-      width: 100%;
-      max-width: 860px;
-    }
-    .app { padding: 0.8rem 0; }
-    .tabs { display:flex; gap:2px; margin-bottom:1rem; border-bottom:0.5px solid var(--color-border-tertiary); flex-wrap:wrap; }
-    .tab { padding:6px 12px; font-size:12px; border:none; background:none; cursor:pointer; color:var(--color-text-secondary); border-bottom:2px solid transparent; margin-bottom:-0.5px; white-space:nowrap; }
-    .tab.active { color:#0F6E56; border-bottom-color:#0F6E56; font-weight:500; }
-    .panel { display:none; } .panel.active { display:block; }
-    .counter-row { display:flex; gap:8px; margin-bottom:10px; }
-    .ccard { background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:7px 12px; flex:1; text-align:center; }
-    .cnum { font-size:20px; font-weight:500; color:#0F6E56; }
-    .clabel { font-size:11px; color:var(--color-text-secondary); }
-    .map-hint { font-size:12px; color:var(--color-text-secondary); margin-bottom:8px; }
-    .map-wrap { border-radius:var(--border-radius-lg); border:0.5px solid var(--color-border-tertiary); overflow:hidden; position:relative; }
-    .zone-area { cursor:pointer; transition:opacity 0.2s; }
-    .zone-area:hover .zone-hl { opacity:0.45; }
-    .zone-hl { opacity:0; transition:opacity 0.2s; pointer-events:none; }
-    .sf { background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:11px 14px; margin-top:10px; }
-    .sf h3 { font-size:13px; font-weight:500; margin-bottom:9px; color:var(--color-text-primary); }
-    .fr { display:flex; gap:7px; margin-bottom:7px; flex-wrap:wrap; }
-    .fr select, .fr textarea { font-size:13px; flex:1; min-width:120px; padding:5px 8px; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); background:var(--color-background-primary); }
-    .fr textarea { min-height:48px; resize:vertical; }
-    .bts { background:#0F6E56; color:#fff; border:none; border-radius:var(--border-radius-md); padding:6px 16px; font-size:13px; cursor:pointer; }
-    .btc { background:none; border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); padding:6px 12px; font-size:13px; cursor:pointer; color:var(--color-text-secondary); margin-left:6px; }
-    .zone-sel-info { background:#E1F5EE; border-radius:var(--border-radius-md); padding:7px 12px; font-size:13px; color:#085041; margin-bottom:9px; display:none; }
-    .si-item { display:flex; align-items:flex-start; gap:9px; padding:6px 0; border-bottom:0.5px solid var(--color-border-tertiary); }
-    .si-badge { background:#E1F5EE; color:#085041; font-size:11px; padding:2px 7px; border-radius:20px; white-space:nowrap; margin-top:2px; flex-shrink:0; }
-    .si-title { font-size:13px; font-weight:500; color:var(--color-text-primary); }
-    .si-meta { font-size:11px; color:var(--color-text-secondary); }
-    .egrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:9px; margin-bottom:12px; }
-    .ecard { background:var(--color-background-primary); border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:11px; cursor:pointer; }
-    .ecard:hover { border-color:#1D9E75; }
-    .ecard.sel { border:2px solid #0F6E56; }
-    .eicon { font-size:22px; margin-bottom:5px; }
-    .etitle { font-size:13px; font-weight:500; color:var(--color-text-primary); margin-bottom:3px; }
-    .edesc { font-size:11px; color:var(--color-text-secondary); line-height:1.4; }
-    .econtent { background:var(--color-background-secondary); border-radius:var(--border-radius-lg); padding:14px; }
-    .econtent h3 { font-size:14px; font-weight:500; margin-bottom:8px; color:var(--color-text-primary); }
-    .econtent p { font-size:13px; color:var(--color-text-secondary); line-height:1.7; margin-bottom:6px; }
-    .econtent ul { font-size:13px; color:var(--color-text-secondary); line-height:1.8; padding-left:15px; }
-    .tipbox { background:#E1F5EE; border-radius:var(--border-radius-md); padding:8px 12px; margin-top:9px; font-size:12px; color:#085041; }
-    .qq { font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:11px; line-height:1.5; }
-    .qopts { display:flex; flex-direction:column; gap:6px; margin-bottom:11px; }
-    .qopt { background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-md); padding:8px 13px; font-size:13px; cursor:pointer; text-align:left; color:var(--color-text-primary); }
-    .qopt.correct { border-color:#1D9E75; background:#E1F5EE; color:#085041; }
-    .qopt.wrong { border-color:#D85A30; background:#FAECE7; color:#4A1B0C; }
-    .qfb { font-size:13px; padding:8px 13px; border-radius:var(--border-radius-md); margin-bottom:9px; line-height:1.6; }
-    .qfb.ok { background:#E1F5EE; color:#085041; }
-    .qfb.no { background:#FAECE7; color:#4A1B0C; }
-    .qdots { display:flex; gap:4px; margin-bottom:11px; }
-    .qdot { width:8px; height:8px; border-radius:50%; background:var(--color-background-secondary); border:0.5px solid var(--color-border-secondary); }
-    .qdot.done { background:#1D9E75; border-color:#1D9E75; }
-    .qdot.cur { border-color:#0F6E56; }
-    .qresult { text-align:center; padding:18px 0; }
-    .rgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:9px; margin-bottom:14px; }
-    .rstat { background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:9px; text-align:center; }
-    .rnum { font-size:20px; font-weight:500; color:#0F6E56; }
-    .rlabel { font-size:11px; color:var(--color-text-secondary); margin-top:2px; }
-    .brow { display:flex; align-items:center; gap:7px; margin-bottom:6px; font-size:12px; }
-    .blabel { width:110px; color:var(--color-text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .btrack { flex:1; height:7px; background:var(--color-background-secondary); border-radius:4px; overflow:hidden; }
-    .bfill { height:100%; background:#1D9E75; border-radius:4px; }
-    .bcount { width:18px; text-align:right; font-weight:500; color:var(--color-text-primary); }
-    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
-  </style>
-</head>
-<body>
-<div class="wrapper">
-<div class="app">
-<h2 class="sr-only">IguanaUTP — Monitoreo de Iguana iguana en el campus de la Universidad Tecnológica de Pereira</h2>
+# IguanaUTP
 
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
-  <div style="width:34px;height:34px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;">
-    <i class="ti ti-leaf" style="color:#0F6E56;font-size:18px;" aria-hidden="true"></i>
-  </div>
-  <div>
-    <div style="font-size:15px;font-weight:500;color:var(--color-text-primary);">IguanaUTP 🦎</div>
-    <div style="font-size:11px;color:var(--color-text-secondary);">Monitoreo de biodiversidad · Campus UTP · Pereira</div>
-  </div>
-</div>
+Aplicación web para el monitoreo de la iguana verde (*Iguana iguana*) en el campus de la Universidad Tecnológica de Pereira.
 
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('mapa',this)"><i class="ti ti-map-pin" aria-hidden="true"></i> Mapa</button>
-  <button class="tab" onclick="switchTab('edu',this)"><i class="ti ti-book" aria-hidden="true"></i> Aprende</button>
-  <button class="tab" onclick="switchTab('quiz',this)"><i class="ti ti-brain" aria-hidden="true"></i> Quiz</button>
-  <button class="tab" onclick="switchTab('reporte',this)"><i class="ti ti-chart-bar" aria-hidden="true"></i> Reportes</button>
-</div>
+## Descripción
 
-<!-- MAPA -->
-<div id="panel-mapa" class="panel active">
-  <div class="counter-row">
-    <div class="ccard"><div class="cnum" id="cnt-total">0</div><div class="clabel">avistamientos</div></div>
-    <div class="ccard"><div class="cnum" id="cnt-hoy">0</div><div class="clabel">hoy</div></div>
-    <div class="ccard"><div class="cnum" id="cnt-zones">0</div><div class="clabel">zonas activas</div></div>
-  </div>
-  <p class="map-hint"><i class="ti ti-hand-click" aria-hidden="true"></i> Haz clic en una zona del mapa para registrar donde viste la iguana</p>
+Esta aplicación permite a la comunidad de la UTP:
 
-  <div class="map-wrap">
-    <svg id="campus-map" viewBox="0 0 900 580" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+- Registrarse con nombre y correo institucional.
+- Registrar avistamientos de iguanas en 30 puntos de referencia del campus.
+- Consultar información educativa sobre la especie.
+- Realizar un quiz interactivo para reforzar conocimientos.
+- Ver estadísticas básicas de avistamientos.
 
-      <!-- FONDO GENERAL campus -->
-      <rect width="900" height="580" fill="#7ab648"/>
+## Requisitos
 
-      <!-- ZONA BOSCOSA IZQUIERDA -->
-      <ellipse cx="60" cy="340" rx="75" ry="120" fill="#4a8a2a"/>
-      <ellipse cx="40" cy="220" rx="55" ry="90" fill="#3d7a22"/>
-      <ellipse cx="90" cy="460" rx="60" ry="80" fill="#4a8a2a"/>
-      <ellipse cx="20" cy="150" rx="40" ry="60" fill="#3d7a22"/>
-      <circle cx="55" cy="300" r="22" fill="#5da832"/>
-      <circle cx="85" cy="350" r="18" fill="#4a8a2a"/>
-      <circle cx="35" cy="390" r="20" fill="#5da832"/>
-      <circle cx="70" cy="430" r="16" fill="#3d7a22"/>
-      <circle cx="100" cy="480" r="19" fill="#4a8a2a"/>
-      <circle cx="40" cy="180" r="17" fill="#5da832"/>
-      <circle cx="75" cy="200" r="15" fill="#4a8a2a"/>
+- Docker y Docker Compose (para la versión con base de datos).
+- O bien PowerShell (para servidor local sin Docker).
 
-      <!-- ZONA BOSCOSA ESQUINA INFERIOR IZQUIERDA -->
-      <ellipse cx="180" cy="530" rx="100" ry="60" fill="#4a8a2a"/>
-      <circle cx="140" cy="520" r="22" fill="#5da832"/>
-      <circle cx="180" cy="540" r="20" fill="#3d7a22"/>
-      <circle cx="220" cy="525" r="18" fill="#5da832"/>
-      <circle cx="250" cy="545" r="15" fill="#4a8a2a"/>
+## Inicio rápido con Docker
 
-      <!-- ZONA VERDE NORTE -->
-      <ellipse cx="420" cy="55" rx="90" ry="35" fill="#5da832" opacity="0.7"/>
-      <circle cx="380" cy="50" r="16" fill="#4a8a2a"/>
-      <circle cx="420" cy="40" r="14" fill="#5da832"/>
-      <circle cx="460" cy="52" r="15" fill="#3d7a22"/>
+```bash
+docker compose up -d
+```
 
-      <!-- ÁRBOLES DISPERSOS -->
-      <circle cx="260" cy="180" r="14" fill="#5da832"/>
-      <circle cx="300" cy="200" r="12" fill="#4a8a2a"/>
-      <circle cx="350" cy="155" r="13" fill="#5da832"/>
-      <circle cx="500" cy="130" r="15" fill="#4a8a2a"/>
-      <circle cx="540" cy="160" r="12" fill="#5da832"/>
-      <circle cx="600" cy="200" r="14" fill="#4a8a2a"/>
-      <circle cx="650" cy="170" r="13" fill="#5da832"/>
-      <circle cx="700" cy="150" r="15" fill="#3d7a22"/>
-      <circle cx="750" cy="180" r="12" fill="#5da832"/>
-      <circle cx="680" cy="300" r="14" fill="#4a8a2a"/>
-      <circle cx="720" cy="330" r="13" fill="#5da832"/>
-      <circle cx="760" cy="310" r="12" fill="#3d7a22"/>
-      <circle cx="820" cy="250" r="14" fill="#5da832"/>
-      <circle cx="850" cy="200" r="12" fill="#4a8a2a"/>
-      <circle cx="830" cy="320" r="13" fill="#5da832"/>
-      <circle cx="860" cy="370" r="15" fill="#4a8a2a"/>
-      <circle cx="840" cy="430" r="14" fill="#5da832"/>
-      <circle cx="870" cy="480" r="13" fill="#3d7a22"/>
+Esto levanta tres servicios:
+| Servicio    | Puerto | URL                         |
+|-------------|--------|-----------------------------|
+| App PHP     | 8080   | http://localhost:8080        |
+| phpMyAdmin  | 8081   | http://localhost:8081        |
+| MySQL       | 3307   | (interno, puerto 3306)       |
 
-      <!-- ZONA DEPORTIVA NORTE -->
-      <rect x="640" y="90" width="120" height="75" rx="4" fill="#5da832" stroke="#4a8a2a" stroke-width="1"/>
-      <rect x="648" y="98" width="104" height="59" rx="2" fill="none" stroke="white" stroke-width="1" opacity="0.6"/>
-      <line x1="700" y1="98" x2="700" y2="157" stroke="white" stroke-width="0.8" opacity="0.5"/>
-      <circle cx="700" cy="128" r="10" fill="none" stroke="white" stroke-width="0.8" opacity="0.5"/>
-      <text x="700" y="185" text-anchor="middle" font-size="8" fill="#2d5a1a" font-family="sans-serif">Zona deportiva</text>
+Credenciales de MySQL: usuario `iguana`, contraseña `iguana123`.
 
-      <!-- CANCHA FÚTBOL -->
-      <ellipse cx="820" cy="480" rx="55" ry="38" fill="#5da832" stroke="#4a8a2a" stroke-width="1.5"/>
-      <rect x="775" y="456" width="90" height="48" rx="3" fill="none" stroke="white" stroke-width="1" opacity="0.5"/>
-      <circle cx="820" cy="480" r="8" fill="none" stroke="white" stroke-width="0.8" opacity="0.5"/>
-      <text x="820" y="508" text-anchor="middle" font-size="8" fill="#2d5a1a" font-family="sans-serif">Cancha fútbol</text>
+### Primer uso
 
-      <!-- CANCHAS INFERIORES -->
-      <rect x="760" y="515" width="65" height="45" rx="2" fill="#5da832" stroke="#4a8a2a" stroke-width="1"/>
-      <rect x="764" y="519" width="57" height="37" rx="1" fill="none" stroke="white" stroke-width="0.7" opacity="0.5"/>
+1. Abre http://localhost:8080
+2. Se mostrará un modal para registrar tu nombre y correo institucional.
+3. Selecciona un punto rojo en el mapa para registrar un avistamiento.
+4. Los datos se guardan en MySQL y se consultan vía API PHP.
 
-      <!-- CIRCUITO INTERNO -->
-      <path d="M160 260 Q200 240 240 250 Q320 270 380 260 Q440 250 500 265 Q580 285 640 270 Q700 255 740 270 Q780 285 790 330 Q795 370 780 400 Q765 430 740 440 Q700 455 660 450 Q620 445 580 450 Q540 455 500 450 Q450 445 410 450 Q370 455 340 450 Q300 445 270 440 Q240 435 220 420 Q200 405 190 380 Q180 355 175 330 Q170 300 160 260Z" fill="none" stroke="#7ecfef" stroke-width="6" opacity="0.8"/>
+### Detener
 
-      <!-- VÍAS INTERNAS -->
-      <line x1="300" y1="265" x2="300" y2="450" stroke="#7ecfef" stroke-width="3" opacity="0.6"/>
-      <line x1="460" y1="260" x2="460" y2="450" stroke="#7ecfef" stroke-width="3" opacity="0.6"/>
-      <line x1="600" y1="270" x2="600" y2="450" stroke="#7ecfef" stroke-width="3" opacity="0.6"/>
-      <line x1="175" y1="350" x2="790" y2="350" stroke="#7ecfef" stroke-width="3" opacity="0.5"/>
+```bash
+docker compose down
+```
 
-      <!-- GUADUCTO -->
-      <path d="M200 200 Q240 230 260 280 Q270 320 260 360" stroke="#2d8a2a" stroke-width="8" fill="none" stroke-dasharray="6,3" opacity="0.7"/>
-      <text x="195" y="225" font-size="8" fill="#1a5a10" font-family="sans-serif" transform="rotate(-30,195,225)">Guaducto</text>
+Para borrar también los datos de la BD:
 
-      <!-- EDIFICIOS -->
+```bash
+docker compose down -v
+```
 
-      <!-- Bloque Y / Jardín botánico -->
-      <g class="zone-area" onclick="zoneClick('Jardín Botánico / Bloque Y')" id="z-jardin">
-        <rect class="zone-hl" x="125" y="155" width="75" height="55" rx="3" fill="#1D9E75"/>
-        <rect x="130" y="160" width="65" height="48" rx="3" fill="#b8c9a8" stroke="#8aa87a" stroke-width="0.8"/>
-        <text x="162" y="182" text-anchor="middle" font-size="8" fill="#3a5a2a" font-family="sans-serif" font-weight="bold">Bloque Y</text>
-        <text x="162" y="194" text-anchor="middle" font-size="7" fill="#4a6a3a" font-family="sans-serif">Entrada jardín</text>
-      </g>
+## Sin Docker (solo frontend estático)
 
-      <!-- Quiosco -->
-      <g class="zone-area" onclick="zoneClick('Quiosco')" id="z-quiosco">
-        <rect class="zone-hl" x="188" y="320" width="50" height="40" rx="3" fill="#1D9E75"/>
-        <rect x="192" y="324" width="42" height="32" rx="3" fill="#c8b87a" stroke="#a89850" stroke-width="0.8"/>
-        <text x="213" y="344" text-anchor="middle" font-size="8" fill="#5a4a10" font-family="sans-serif">Quiosco</text>
-      </g>
+Usa `server.ps1` desde PowerShell:
 
-      <!-- Planetario -->
-      <g class="zone-area" onclick="zoneClick('Planetario')" id="z-planetario">
-        <rect class="zone-hl" x="185" y="375" width="55" height="42" rx="3" fill="#1D9E75"/>
-        <rect x="189" y="379" width="47" height="34" rx="3" fill="#d4c4a0" stroke="#b4a480" stroke-width="0.8"/>
-        <text x="212" y="400" text-anchor="middle" font-size="8" fill="#5a4a10" font-family="sans-serif">Planetario</text>
-      </g>
+```powershell
+.\server.ps1
+```
 
-      <!-- Bloque 11 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 11')" id="z-b11">
-        <rect class="zone-hl" x="155" y="235" width="65" height="45" rx="3" fill="#1D9E75"/>
-        <rect x="159" y="239" width="57" height="37" rx="3" fill="#d4aa70" stroke="#b48a50" stroke-width="0.8"/>
-        <text x="187" y="261" text-anchor="middle" font-size="9" fill="#5a3a10" font-family="sans-serif" font-weight="bold">11</text>
-      </g>
+Luego abre http://localhost:8080. En este modo los datos solo se guardan en memoria (sin persistencia).
 
-      <!-- Edificio 12 -->
-      <g class="zone-area" onclick="zoneClick('Acopio de Residuos (Edificio 12)')" id="z-b12">
-        <rect class="zone-hl" x="125" y="85" width="70" height="48" rx="3" fill="#1D9E75"/>
-        <rect x="129" y="89" width="62" height="40" rx="3" fill="#c0c8c0" stroke="#909890" stroke-width="0.8"/>
-        <text x="160" y="106" text-anchor="middle" font-size="9" fill="#303830" font-family="sans-serif" font-weight="bold">12</text>
-        <text x="160" y="118" text-anchor="middle" font-size="7" fill="#405040" font-family="sans-serif">Acop. Residuos</text>
-      </g>
+## Estructura del proyecto
 
-      <!-- Edificio 13 -->
-      <g class="zone-area" onclick="zoneClick('Edificio 13 / Observatorio')" id="z-b13">
-        <rect class="zone-hl" x="270" y="75" width="80" height="52" rx="3" fill="#1D9E75"/>
-        <rect x="274" y="79" width="72" height="44" rx="3" fill="#c8d4d8" stroke="#98a4a8" stroke-width="0.8"/>
-        <text x="310" y="97" text-anchor="middle" font-size="9" fill="#283038" font-family="sans-serif" font-weight="bold">13</text>
-        <text x="310" y="109" text-anchor="middle" font-size="7" fill="#384048" font-family="sans-serif">Observatorio</text>
-      </g>
+```
+├── docker-compose.yml    # Orquestación de servicios
+├── Dockerfile            # Imagen PHP-Apache con PDO MySQL
+├── www/
+│   ├── index.php         # Aplicación principal
+│   ├── assets/
+│   │   └── mapa-utp.jpg  # Mapa satelital del campus UTP
+│   ├── css/
+│   │   └── style.css     # Estilos de la aplicación
+│   ├── js/
+│   │   ├── data.js       # Puntos de referencia, contenido educativo, quiz
+│   │   └── app.js        # Lógica: mapa, registro, API, modal estudiante
+│   ├── api/
+│   │   ├── db.php        # Conexión a MySQL (PDO)
+│   │   ├── student.php   # Registro de estudiantes
+│   │   └── sighting.php  # CRUD de avistamientos
+│   └── sql/
+│       └── schema.sql    # Esquema de base de datos
+├── server.ps1            # Servidor HTTP local (PowerShell)
+└── README.md
+```
 
-      <!-- Edificio 14 -->
-      <g class="zone-area" onclick="zoneClick('Laboratorio Química Ambiental (Ed. 14)')" id="z-b14">
-        <rect class="zone-hl" x="460" y="80" width="90" height="52" rx="3" fill="#1D9E75"/>
-        <rect x="464" y="84" width="82" height="44" rx="3" fill="#c8d0d8" stroke="#98a0a8" stroke-width="0.8"/>
-        <text x="505" y="102" text-anchor="middle" font-size="9" fill="#283038" font-family="sans-serif" font-weight="bold">14</text>
-        <text x="505" y="114" text-anchor="middle" font-size="7" fill="#384048" font-family="sans-serif">Lab. Q. Ambiental</text>
-      </g>
+## Puntos de referencia
 
-      <!-- Bloque 10 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 10')" id="z-b10">
-        <rect class="zone-hl" x="370" y="150" width="80" height="55" rx="3" fill="#1D9E75"/>
-        <rect x="374" y="154" width="72" height="47" rx="3" fill="#e8b870" stroke="#c89850" stroke-width="0.8"/>
-        <text x="410" y="182" text-anchor="middle" font-size="10" fill="#5a3a10" font-family="sans-serif" font-weight="bold">10</text>
-      </g>
+El mapa contiene 30 puntos rojos que corresponden a ubicaciones estratégicas del campus donde se han registrado avistamientos de iguanas, incluyendo edificios, zonas verdes y áreas de alimentación.
 
-      <!-- Bloque 9 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 9')" id="z-b9">
-        <rect class="zone-hl" x="318" y="200" width="75" height="58" rx="3" fill="#1D9E75"/>
-        <rect x="322" y="204" width="67" height="50" rx="3" fill="#e8b870" stroke="#c89850" stroke-width="0.8"/>
-        <text x="355" y="233" text-anchor="middle" font-size="10" fill="#5a3a10" font-family="sans-serif" font-weight="bold">9</text>
-      </g>
+## Base de datos
 
-      <!-- Bloque 8 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 8')" id="z-b8">
-        <rect class="zone-hl" x="300" y="265" width="78" height="60" rx="3" fill="#1D9E75"/>
-        <rect x="304" y="269" width="70" height="52" rx="3" fill="#e8b870" stroke="#c89850" stroke-width="0.8"/>
-        <text x="339" y="299" text-anchor="middle" font-size="10" fill="#5a3a10" font-family="sans-serif" font-weight="bold">8</text>
-      </g>
+Tabla `students`:
+- `id`, `name`, `email` (único), `created_at`
 
-      <!-- Biblioteca Bloque 7 -->
-      <g class="zone-area" onclick="zoneClick('Biblioteca (Bloque 7)')" id="z-biblio">
-        <rect class="zone-hl" x="385" y="255" width="90" height="62" rx="3" fill="#1D9E75"/>
-        <rect x="389" y="259" width="82" height="54" rx="3" fill="#c8d8e8" stroke="#98a8c8" stroke-width="0.8"/>
-        <text x="430" y="284" text-anchor="middle" font-size="9" fill="#283848" font-family="sans-serif" font-weight="bold">Biblioteca</text>
-        <text x="430" y="296" text-anchor="middle" font-size="7" fill="#384858" font-family="sans-serif">Bloque 7</text>
-      </g>
+Tabla `sightings`:
+- `id`, `student_id` (FK → students), `zone`, `hora`, `cantidad`, `tamano`, `comportamiento`, `observaciones`, `created_at`
 
-      <!-- Bloque 6 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 6')" id="z-b6">
-        <rect class="zone-hl" x="473" y="245" width="70" height="50" rx="3" fill="#1D9E75"/>
-        <rect x="477" y="249" width="62" height="42" rx="3" fill="#d8c8a0" stroke="#b8a880" stroke-width="0.8"/>
-        <text x="508" y="274" text-anchor="middle" font-size="10" fill="#4a3a10" font-family="sans-serif" font-weight="bold">6</text>
-      </g>
+Accede a phpMyAdmin en http://localhost:8081 (usuario: `root`, contraseña: `iguana123`).
 
-      <!-- Cafetería -->
-      <g class="zone-area" onclick="zoneClick('Cafetería Central El Galpón')" id="z-cafeteria">
-        <rect class="zone-hl" x="475" y="315" width="95" height="55" rx="3" fill="#1D9E75"/>
-        <rect x="479" y="319" width="87" height="47" rx="3" fill="#d8c890" stroke="#b8a870" stroke-width="0.8"/>
-        <text x="522" y="339" text-anchor="middle" font-size="8" fill="#4a3a10" font-family="sans-serif" font-weight="bold">Cafetería Central</text>
-        <text x="522" y="351" text-anchor="middle" font-size="7" fill="#5a4a20" font-family="sans-serif">El Galpón</text>
-      </g>
+## Objetivo
 
-      <!-- Bloque 5 Coliseo -->
-      <g class="zone-area" onclick="zoneClick('Bloque 5 / Coliseo')" id="z-coliseo">
-        <rect class="zone-hl" x="560" y="280" width="85" height="58" rx="3" fill="#1D9E75"/>
-        <rect x="564" y="284" width="77" height="50" rx="3" fill="#c8c8c8" stroke="#989898" stroke-width="0.8"/>
-        <text x="602" y="313" text-anchor="middle" font-size="9" fill="#303030" font-family="sans-serif" font-weight="bold">5 · Coliseo</text>
-      </g>
-
-      <!-- Bloque 15 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 15')" id="z-b15">
-        <rect class="zone-hl" x="660" y="195" width="90" height="65" rx="3" fill="#1D9E75"/>
-        <rect x="664" y="199" width="82" height="57" rx="3" fill="#c8d0e0" stroke="#98a0c0" stroke-width="0.8"/>
-        <text x="705" y="231" text-anchor="middle" font-size="10" fill="#283050" font-family="sans-serif" font-weight="bold">15</text>
-      </g>
-
-      <!-- Bloque 4 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 4')" id="z-b4">
-        <rect class="zone-hl" x="620" y="330" width="80" height="55" rx="3" fill="#1D9E75"/>
-        <rect x="624" y="334" width="72" height="47" rx="3" fill="#e8c870" stroke="#c8a850" stroke-width="0.8"/>
-        <text x="660" y="361" text-anchor="middle" font-size="10" fill="#5a3a10" font-family="sans-serif" font-weight="bold">4</text>
-      </g>
-
-      <!-- Bloque 1 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 1 - Ingeniería')" id="z-b1">
-        <rect class="zone-hl" x="660" y="395" width="80" height="55" rx="3" fill="#1D9E75"/>
-        <rect x="664" y="399" width="72" height="47" rx="3" fill="#e8c870" stroke="#c8a850" stroke-width="0.8"/>
-        <text x="700" y="427" text-anchor="middle" font-size="10" fill="#5a3a10" font-family="sans-serif" font-weight="bold">1</text>
-      </g>
-
-      <!-- Bloque 2 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 2')" id="z-b2">
-        <rect class="zone-hl" x="750" y="390" width="75" height="52" rx="3" fill="#1D9E75"/>
-        <rect x="754" y="394" width="67" height="44" rx="3" fill="#e8c870" stroke="#c8a850" stroke-width="0.8"/>
-        <text x="787" y="420" text-anchor="middle" font-size="10" fill="#5a3a10" font-family="sans-serif" font-weight="bold">2</text>
-      </g>
-
-      <!-- Bloque 3 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 3')" id="z-b3">
-        <rect class="zone-hl" x="560" y="395" width="80" height="52" rx="3" fill="#1D9E75"/>
-        <rect x="564" y="399" width="72" height="44" rx="3" fill="#e8c870" stroke="#c8a850" stroke-width="0.8"/>
-        <text x="600" y="425" text-anchor="middle" font-size="10" fill="#5a3a10" font-family="sans-serif" font-weight="bold">3</text>
-      </g>
-
-      <!-- Bloque 16 -->
-      <g class="zone-area" onclick="zoneClick('Bloque 16')" id="z-b16">
-        <rect class="zone-hl" x="820" y="510" width="75" height="52" rx="3" fill="#1D9E75"/>
-        <rect x="824" y="514" width="67" height="44" rx="3" fill="#c0c8d8" stroke="#909898" stroke-width="0.8"/>
-        <text x="857" y="540" text-anchor="middle" font-size="10" fill="#283038" font-family="sans-serif" font-weight="bold">16</text>
-      </g>
-
-      <!-- La Frutería -->
-      <g class="zone-area" onclick="zoneClick('La Frutería')" id="z-fruteria">
-        <rect class="zone-hl" x="280" y="380" width="70" height="40" rx="3" fill="#1D9E75"/>
-        <rect x="284" y="384" width="62" height="32" rx="3" fill="#c8e890" stroke="#98c870" stroke-width="0.8"/>
-        <text x="315" y="404" text-anchor="middle" font-size="8" fill="#2a5a10" font-family="sans-serif">La Frutería</text>
-      </g>
-
-      <!-- En construcción -->
-      <rect x="760" y="260" width="80" height="55" rx="3" fill="#d8d0c0" stroke="#b0a890" stroke-width="0.8" stroke-dasharray="4,2"/>
-      <text x="800" y="282" text-anchor="middle" font-size="7" fill="#706050" font-family="sans-serif">En proceso</text>
-      <text x="800" y="293" text-anchor="middle" font-size="7" fill="#706050" font-family="sans-serif">construcción</text>
-
-      <!-- ENTRADAS -->
-      <circle cx="730" cy="482" r="10" fill="#2c6e3a" stroke="white" stroke-width="1.5"/>
-      <text x="730" y="486" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">E</text>
-      <text x="730" y="500" text-anchor="middle" font-size="7" fill="#1a3a20" font-family="sans-serif">Entrada 1</text>
-
-      <circle cx="480" cy="230" r="9" fill="#2c6e3a" stroke="white" stroke-width="1.5"/>
-      <text x="480" y="234" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">E</text>
-      <text x="480" y="246" text-anchor="middle" font-size="7" fill="#1a3a20" font-family="sans-serif">Ent. Biblio.</text>
-
-      <circle cx="310" cy="143" r="9" fill="#2c6e3a" stroke="white" stroke-width="1.5"/>
-      <text x="310" y="147" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">E</text>
-
-      <circle cx="134" cy="195" r="9" fill="#2c6e3a" stroke="white" stroke-width="1.5"/>
-      <text x="134" y="199" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">E</text>
-      <text x="134" y="211" text-anchor="middle" font-size="7" fill="#1a3a20" font-family="sans-serif">Ent. Jardín</text>
-
-      <!-- PARADEROS -->
-      <rect x="380" y="452" width="18" height="12" rx="2" fill="#5a8ac8" stroke="white" stroke-width="0.8"/>
-      <text x="389" y="462" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">B</text>
-      <rect x="550" y="452" width="18" height="12" rx="2" fill="#5a8ac8" stroke="white" stroke-width="0.8"/>
-      <text x="559" y="462" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">B</text>
-      <rect x="680" y="452" width="18" height="12" rx="2" fill="#5a8ac8" stroke="white" stroke-width="0.8"/>
-      <text x="689" y="462" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">B</text>
-
-      <!-- PARQUEADEROS -->
-      <rect x="360" y="200" width="22" height="16" rx="2" fill="#3a6ab0" opacity="0.8"/>
-      <text x="371" y="212" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">P</text>
-      <rect x="555" y="200" width="22" height="16" rx="2" fill="#3a6ab0" opacity="0.8"/>
-      <text x="566" y="212" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">P</text>
-      <rect x="640" y="360" width="22" height="16" rx="2" fill="#3a6ab0" opacity="0.8"/>
-      <text x="651" y="372" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">P</text>
-      <rect x="265" y="455" width="22" height="16" rx="2" fill="#3a6ab0" opacity="0.8"/>
-      <text x="276" y="467" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">P</text>
-      <rect x="730" y="455" width="22" height="16" rx="2" fill="#3a6ab0" opacity="0.8"/>
-      <text x="741" y="467" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif" font-weight="bold">P</text>
-
-      <!-- HEADER UTP -->
-      <rect x="590" y="18" width="290" height="55" rx="6" fill="#1a5a2a"/>
-      <text x="735" y="38" text-anchor="middle" font-size="11" fill="white" font-family="sans-serif" font-weight="bold">#ConoceTuCampus</text>
-      <text x="735" y="54" text-anchor="middle" font-size="9" fill="#90d890" font-family="sans-serif">Universidad Tecnológica de Pereira</text>
-
-      <!-- LEYENDA -->
-      <rect x="10" y="490" width="175" height="82" rx="5" fill="white" opacity="0.88"/>
-      <text x="97" y="506" text-anchor="middle" font-size="9" fill="#1a3a20" font-family="sans-serif" font-weight="bold">Convenciones</text>
-      <rect x="18" y="512" width="10" height="8" rx="1" fill="#e8b870"/><text x="33" y="520" font-size="8" fill="#3a3a3a" font-family="sans-serif">Edificios / Bloques</text>
-      <circle cx="23" cy="533" r="5" fill="#2c6e3a"/><text x="33" y="537" font-size="8" fill="#3a3a3a" font-family="sans-serif">Entradas al campus</text>
-      <rect x="18" y="544" width="10" height="8" rx="1" fill="#3a6ab0"/><text x="33" y="552" font-size="8" fill="#3a3a3a" font-family="sans-serif">Parqueadero (P)</text>
-      <rect x="18" y="558" width="10" height="8" rx="1" fill="#5a8ac8"/><text x="33" y="566" font-size="8" fill="#3a3a3a" font-family="sans-serif">Paradero de buses</text>
-
-      <!-- PINES DINÁMICOS -->
-      <g id="pins-layer"></g>
-    </svg>
-  </div>
-
-  <div class="zone-sel-info" id="zone-info">
-    <i class="ti ti-map-pin" aria-hidden="true"></i> <strong id="zone-name-display"></strong>
-  </div>
-
-  <div class="sf">
-    <h3><i class="ti ti-plus" aria-hidden="true"></i> Registrar avistamiento</h3>
-    <div class="fr">
-      <select id="sel-hora"><option value="">-- Hora --</option><option>Mañana (6–10 am)</option><option>Media mañana (10–12 pm)</option><option>Mediodía (12–2 pm)</option><option>Tarde (2–5 pm)</option><option>Atardecer (5–7 pm)</option></select>
-      <select id="sel-num"><option value="">-- Cantidad --</option><option>1 iguana</option><option>2–3 iguanas</option><option>4–6 iguanas</option><option>Más de 6</option></select>
-    </div>
-    <div class="fr">
-      <select id="sel-tamano"><option value="">-- Tamaño --</option><option>Cría (menos de 30 cm)</option><option>Juvenil (30–80 cm)</option><option>Adulta (más de 80 cm)</option><option>Varios tamaños</option></select>
-      <select id="sel-comp"><option value="">-- Comportamiento --</option><option>Tomando el sol</option><option>Alimentándose</option><option>Trepando árbol</option><option>En movimiento</option><option>En reposo</option><option>Comportamiento defensivo</option></select>
-    </div>
-    <div class="fr"><textarea id="txt-obs" placeholder="Observaciones adicionales..."></textarea></div>
-    <button class="bts" onclick="addSighting()">📍 Registrar</button>
-    <button class="btc" onclick="clearForm()">Limpiar</button>
-  </div>
-
-  <div id="sightings-list" style="display:none;margin-top:12px;">
-    <div style="font-size:13px;font-weight:500;margin-bottom:7px;color:var(--color-text-primary);">Últimos avistamientos</div>
-    <div id="sightings-items"></div>
-  </div>
-</div>
-
-<!-- EDU -->
-<div id="panel-edu" class="panel">
-  <div class="egrid">
-    <div class="ecard sel" onclick="showEdu(0,this)"><div class="eicon">🦎</div><div class="etitle">¿Quién es?</div><div class="edesc">Biología y características</div></div>
-    <div class="ecard" onclick="showEdu(1,this)"><div class="eicon">🌿</div><div class="etitle">Hábitat y dieta</div><div class="edesc">Dónde vive y qué come</div></div>
-    <div class="ecard" onclick="showEdu(2,this)"><div class="eicon">⚠️</div><div class="etitle">Conservación</div><div class="edesc">Amenazas y protección</div></div>
-    <div class="ecard" onclick="showEdu(3,this)"><div class="eicon">🤝</div><div class="etitle">Convivencia</div><div class="edesc">Cómo actuar al verla</div></div>
-  </div>
-  <div class="econtent" id="edu-content"></div>
-</div>
-
-<!-- QUIZ -->
-<div id="panel-quiz" class="panel">
-  <div id="quiz-area"></div>
-</div>
-
-<!-- REPORTE -->
-<div id="panel-reporte" class="panel">
-  <div style="font-size:13px;font-weight:500;margin-bottom:9px;color:var(--color-text-primary);">Resumen</div>
-  <div class="rgrid">
-    <div class="rstat"><div class="rnum" id="r-total">0</div><div class="rlabel">Total registros</div></div>
-    <div class="rstat"><div class="rnum" id="r-hoy">0</div><div class="rlabel">Hoy</div></div>
-    <div class="rstat"><div class="rnum" id="r-zonas">0</div><div class="rlabel">Zonas activas</div></div>
-    <div class="rstat"><div class="rnum" id="r-hora" style="font-size:12px;margin-top:3px;">–</div><div class="rlabel">Hora pico</div></div>
-  </div>
-  <div style="font-size:13px;font-weight:500;margin-bottom:7px;color:var(--color-text-primary);">Zonas con más avistamientos</div>
-  <div id="zona-bars"><p style="font-size:13px;color:var(--color-text-secondary);">Registra avistamientos para ver estadísticas.</p></div>
-  <div style="font-size:13px;font-weight:500;margin:12px 0 7px;color:var(--color-text-primary);">Comportamientos observados</div>
-  <div id="comp-bars"><p style="font-size:13px;color:var(--color-text-secondary);">Sin datos aún.</p></div>
-  <div class="tipbox" style="margin-top:10px;"><i class="ti ti-info-circle" aria-hidden="true"></i> Estos datos pueden ser insumo para el informe de biodiversidad del campus UTP.</div>
-</div>
-</div>
-</div>
-
-<script>
-const eduData=[
-  {title:"¿Quién es la iguana verde?",body:`<p>La iguana verde (<em>Iguana iguana</em>) es un reptil herbívoro de la familia Iguanidae, nativa de América Central y del Sur, incluyendo Colombia. Puede alcanzar hasta 1,8 m y vivir más de 20 años.</p><p>Reconocible por su cresta dorsal, papada prominente y garras para trepar. Los machos adultos desarrollan coloraciones naranja en época reproductiva.</p><ul><li>Ectotérmica: regula temperatura con el sol</li><li>Activa principalmente en horas de mayor radiación</li><li>Ovípara: pone entre 10 y 70 huevos</li></ul>`,tip:"En la UTP, las iguanas aprovechan el guaducto, los árboles del campus y los senderos arborizados como refugio y zona de termorregulación."},
-  {title:"Hábitat y dieta en el campus",body:`<p>Habita bosques tropicales, riberas de ríos y zonas urbanas con vegetación. El campus UTP ofrece condiciones favorables por su diversidad vegetal, el guaducto y los jardines.</p><ul><li>Hojas tiernas y brotes de árboles del campus</li><li>Flores y frutos (mango, higuillo, papaya)</li><li>Juveniles consumen ocasionalmente insectos</li></ul>`,tip:"Nunca ofrezcas pan, arroz ni comida de cafetería a las iguanas. Su digestión está adaptada exclusivamente a vegetación natural."},
-  {title:"Estado de conservación",body:`<p>Figura en el Apéndice II de CITES. En Colombia está protegida por la Ley 2 de 1959 y resoluciones del Ministerio de Ambiente.</p><ul><li>Pérdida de hábitat por urbanización</li><li>Captura ilegal para mascotas</li><li>Atropellamiento vehicular en el campus</li><li>Alimentación antrópica inadecuada</li><li>Persecución por desconocimiento</li></ul>`,tip:"Si encuentras una iguana herida en la UTP, contacta a la Facultad de Ciencias Ambientales o al programa de Medicina Veterinaria y Zootecnia."},
-  {title:"Convivencia responsable",body:`<p>La presencia de iguanas en la UTP es un indicador positivo de biodiversidad urbana. Convivir con ellas es parte de nuestra responsabilidad como comunidad universitaria.</p><ul><li>No perseguirlas ni causarles estrés</li><li>No alimentarlas con comida humana</li><li>Mantener mínimo 2 metros de distancia</li><li>No capturarlas ni tocarlas</li><li>Registrar avistamientos para el monitoreo</li><li>Respetar la vegetación del campus</li></ul>`,tip:"Cada avistamiento que registras contribuye a datos reales de ciencia ciudadana que apoyan la gestión ambiental de la UTP."}
-];
-
-const quizData=[
-  {q:"¿Cuál es la principal amenaza para la iguana verde en entornos urbanos como la UTP?",opts:["Exceso de lluvia","Pérdida de hábitat y captura ilegal","Competencia con otras especies","Enfermedades fúngicas"],correct:1,fb:"Correcto. La pérdida de hábitat y la captura ilegal son las mayores amenazas.",fbw:"La principal amenaza es la pérdida de hábitat y la captura para el tráfico de mascotas."},
-  {q:"¿A qué apéndice de la CITES pertenece la Iguana iguana?",opts:["Apéndice I","Apéndice II","Apéndice III","No está en CITES"],correct:1,fb:"Exacto. El Apéndice II regula el comercio internacional con controles estrictos.",fbw:"La iguana verde figura en el Apéndice II de CITES."},
-  {q:"¿Qué tipo de alimentación tiene la iguana verde adulta?",opts:["Carnívora","Omnívora","Principalmente herbívora","Insectívora"],correct:2,fb:"Muy bien. Los adultos son principalmente herbívoros: hojas, flores y frutos.",fbw:"Las iguanas adultas son principalmente herbívoras."},
-  {q:"Si ves una iguana en el guaducto de la UTP, ¿qué haces?",opts:["Te acercas y le das de comer","Observas a distancia y registras el avistamiento","La capturas para protegerla","La asustas"],correct:1,fb:"Exactamente. Observar con respeto y registrar es la conducta más responsable.",fbw:"Lo correcto es observar a distancia (mín. 2 m) y registrar el avistamiento."},
-  {q:"¿Qué significa que la iguana sea ectotérmica?",opts:["Genera calor interno","Depende del sol para regular su temperatura","Solo se activa de noche","Mantiene temperatura constante"],correct:1,fb:"Correcto. Las iguanas dependen del sol para alcanzar su temperatura óptima.",fbw:"Las iguanas son ectotérmicas: dependen del sol para regular su temperatura."}
-];
-
-let sightings=[];
-let selectedZone=null;
-let selectedZoneCenter={x:450,y:290};
-let quizState={current:0,score:0,answered:false};
-
-const zoneCenters={
-  'Jardín Botánico / Bloque Y':{x:162,y:184},
-  'Quiosco':{x:213,y:340},
-  'Planetario':{x:212,y:396},
-  'Bloque 11':{x:187,y:257},
-  'Acopio de Residuos (Edificio 12)':{x:160,y:109},
-  'Edificio 13 / Observatorio':{x:310,y:101},
-  'Laboratorio Química Ambiental (Ed. 14)':{x:505,y:106},
-  'Bloque 10':{x:410,y:177},
-  'Bloque 9':{x:355,y:229},
-  'Bloque 8':{x:339,y:295},
-  'Biblioteca (Bloque 7)':{x:430,y:286},
-  'Bloque 6':{x:508,y:270},
-  'Cafetería Central El Galpón':{x:522,y:342},
-  'Bloque 5 / Coliseo':{x:602,y:309},
-  'Bloque 15':{x:705,y:227},
-  'Bloque 4':{x:660,y:357},
-  'Bloque 1 - Ingeniería':{x:700,y:422},
-  'Bloque 2':{x:787,y:416},
-  'Bloque 3':{x:600,y:421},
-  'Bloque 16':{x:857,y:536},
-  'La Frutería':{x:315,y:400},
-};
-
-function zoneClick(name){
-  selectedZone=name;
-  selectedZoneCenter=zoneCenters[name]||{x:450,y:290};
-  const info=document.getElementById('zone-info');
-  document.getElementById('zone-name-display').textContent='Zona seleccionada: '+name;
-  info.style.display='block';
-  document.querySelectorAll('.zone-hl').forEach(el=>el.style.opacity='0');
-}
-
-function addSighting(){
-  if(!selectedZone){alert('Por favor haz clic en una zona del mapa.');return;}
-  const hora=document.getElementById('sel-hora').value;
-  const num=document.getElementById('sel-num').value;
-  const tamano=document.getElementById('sel-tamano').value;
-  const comp=document.getElementById('sel-comp').value;
-  const obs=document.getElementById('txt-obs').value.trim();
-  if(!hora||!num){alert('Por favor completa hora y cantidad.');return;}
-  const s={zona:selectedZone,cx:selectedZoneCenter.x,cy:selectedZoneCenter.y,hora,num,tamano,comp,obs,ts:new Date()};
-  sightings.unshift(s);
-  updateCounters();
-  renderSightings();
-  addPin(s.cx,s.cy);
-  clearForm();
-}
-
-function addPin(cx,cy){
-  const layer=document.getElementById('pins-layer');
-  const jx=(Math.random()-0.5)*18;const jy=(Math.random()-0.5)*12;
-  const px=cx+jx;const py=cy+jy;
-  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-  path.setAttribute('d',`M${px},${py-18} a8,8 0 1,1 0.01,0 Z`);
-  path.setAttribute('fill','#e53935');path.setAttribute('stroke','white');path.setAttribute('stroke-width','1.5');
-  const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  circle.setAttribute('cx',px);circle.setAttribute('cy',py-14);circle.setAttribute('r','3');circle.setAttribute('fill','white');circle.setAttribute('opacity','0.8');
-  const tri=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-  tri.setAttribute('points',`${px-5},${py-10} ${px+5},${py-10} ${px},${py}`);
-  tri.setAttribute('fill','#e53935');
-  g.appendChild(tri);g.appendChild(path);g.appendChild(circle);
-  layer.appendChild(g);
-  setTimeout(()=>{path.setAttribute('fill','#f9a825');tri.setAttribute('fill','#f9a825');},6000);
-}
-
-function clearForm(){
-  ['sel-hora','sel-num','sel-tamano','sel-comp'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('txt-obs').value='';
-}
-
-function updateCounters(){
-  const today=new Date().toDateString();
-  document.getElementById('cnt-total').textContent=sightings.length;
-  document.getElementById('cnt-hoy').textContent=sightings.filter(s=>s.ts.toDateString()===today).length;
-  document.getElementById('cnt-zones').textContent=new Set(sightings.map(s=>s.zona)).size;
-}
-
-function renderSightings(){
-  const list=document.getElementById('sightings-list');
-  list.style.display=sightings.length?'block':'none';
-  document.getElementById('sightings-items').innerHTML=sightings.slice(0,5).map(s=>`
-    <div class="si-item">
-      <span class="si-badge">${s.zona.split('(')[0].trim().slice(0,16)}</span>
-      <div><div class="si-title">${s.num}${s.tamano?' · '+s.tamano:''}${s.comp?' · '+s.comp:''}</div>
-      <div class="si-meta">${s.hora} · ${s.ts.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}${s.obs?' · '+s.obs.slice(0,45):''}</div></div>
-    </div>`).join('');
-}
-
-function switchTab(id,btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-'+id).classList.add('active');
-  btn.classList.add('active');
-  if(id==='reporte')updateReport();
-  if(id==='quiz')renderQuiz();
-}
-
-function showEdu(idx,card){
-  document.querySelectorAll('.ecard').forEach(c=>c.classList.remove('sel'));
-  card.classList.add('sel');
-  const d=eduData[idx];
-  document.getElementById('edu-content').innerHTML=`<h3>${d.title}</h3>${d.body}<div class="tipbox"><i class="ti ti-bulb" aria-hidden="true"></i> ${d.tip}</div>`;
-}
-
-function renderQuiz(){
-  const area=document.getElementById('quiz-area');
-  if(quizState.current>=quizData.length){
-    const pct=Math.round(quizState.score/quizData.length*100);
-    area.innerHTML=`<div class="qresult"><div style="font-size:36px;font-weight:500;color:#0F6E56;">${quizState.score}/${quizData.length}</div><div style="font-size:13px;color:var(--color-text-secondary);">${pct}% correcto</div><div style="font-size:13px;color:var(--color-text-primary);margin:12px 0;line-height:1.6;">${pct>=80?'¡Excelente! Eres guardián de la iguana verde en la UTP.':pct>=50?'Buen trabajo. Revisa el módulo Aprende para reforzar.':'Te animamos a visitar la sección Aprende.'}</div><button class="bts" onclick="restartQuiz()">Intentar de nuevo</button></div>`;return;
-  }
-  const q=quizData[quizState.current];
-  area.innerHTML=`<div class="qdots">${quizData.map((_,i)=>`<div class="qdot${i<quizState.current?' done':i===quizState.current?' cur':''}"></div>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px;">Pregunta ${quizState.current+1} de ${quizData.length}</div><div class="qq">${q.q}</div><div class="qopts">${q.opts.map((o,i)=>`<button class="qopt" onclick="answerQuiz(${i})">${o}</button>`).join('')}</div><div id="qfb" style="display:none;"></div><button id="btn-next" style="display:none;" class="bts" onclick="nextQ()">Siguiente →</button>`;
-}
-
-function answerQuiz(idx){
-  if(quizState.answered)return;
-  quizState.answered=true;
-  const q=quizData[quizState.current];
-  document.querySelectorAll('.qopt').forEach((o,i)=>{o.disabled=true;if(i===q.correct)o.classList.add('correct');else if(i===idx&&idx!==q.correct)o.classList.add('wrong');});
-  const ok=idx===q.correct;if(ok)quizState.score++;
-  const fb=document.getElementById('qfb');
-  fb.className='qfb '+(ok?'ok':'no');fb.textContent=ok?q.fb:q.fbw;fb.style.display='block';
-  document.getElementById('btn-next').style.display='inline-block';
-}
-function nextQ(){quizState.current++;quizState.answered=false;renderQuiz();}
-function restartQuiz(){quizState={current:0,score:0,answered:false};renderQuiz();}
-
-function updateReport(){
-  const today=new Date().toDateString();
-  document.getElementById('r-total').textContent=sightings.length;
-  document.getElementById('r-hoy').textContent=sightings.filter(s=>s.ts.toDateString()===today).length;
-  document.getElementById('r-zonas').textContent=new Set(sightings.map(s=>s.zona)).size;
-  const hc={};sightings.forEach(s=>{hc[s.hora]=(hc[s.hora]||0)+1;});
-  const th=Object.entries(hc).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('r-hora').textContent=th?th[0].split('(')[0].trim():'–';
-  const zc={};sightings.forEach(s=>{zc[s.zona]=(zc[s.zona]||0)+1;});
-  const mz=Math.max(...Object.values(zc),1);
-  document.getElementById('zona-bars').innerHTML=sightings.length?Object.entries(zc).sort((a,b)=>b[1]-a[1]).map(([z,c])=>`<div class="brow"><span class="blabel">${z.split('(')[0].trim().slice(0,18)}</span><div class="btrack"><div class="bfill" style="width:${Math.round(c/mz*100)}%"></div></div><span class="bcount">${c}</span></div>`).join(''):'<p style="font-size:13px;color:var(--color-text-secondary);">Sin datos.</p>';
-  const cc={};sightings.forEach(s=>{if(s.comp)cc[s.comp]=(cc[s.comp]||0)+1;});
-  const mc=Math.max(...Object.values(cc),1);
-  document.getElementById('comp-bars').innerHTML=Object.keys(cc).length?Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="brow"><span class="blabel">${c}</span><div class="btrack"><div class="bfill" style="width:${Math.round(n/mc*100)}%"></div></div><span class="bcount">${n}</span></div>`).join(''):'<p style="font-size:13px;color:var(--color-text-secondary);">Sin datos.</p>';
-}
-
-showEdu(0,document.querySelector('.ecard'));
-renderQuiz();
-</script>
-</body>
-</html>
+Mejorar la gestión de biodiversidad en el campus de la UTP a través del registro ciudadano de observaciones.
