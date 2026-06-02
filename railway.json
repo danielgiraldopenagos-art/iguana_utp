@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "railway/php",
+    "buildCommand": null
+  },
+  "deploy": {
+    "startCommand": "php -S 0.0.0.0:$PORT -t .",
+    "restartPolicyType": "on_failure"
+  }
+}

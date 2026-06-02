@@ -1,0 +1,10 @@
+{
+  "name": "iguanautp/monitoreo",
+  "description": "Monitoreo de la iguana verde en el campus UTP",
+  "type": "project",
+  "require": {
+    "php": ">=8.1",
+    "ext-pgsql": "*",
+    "ext-pdo_pgsql": "*"
+  }
+}
