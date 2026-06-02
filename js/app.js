@@ -279,37 +279,7 @@ function renderAllSightings(sightings, stats) {
         `<div class="brow"><span class="blabel">${escHtml(c)}</span><div class="btrack"><div class="bfill" style="width:${Math.round(n / mc * 100)}%"></div></div><span class="bcount">${n}</span></div>`).join('')
     : '<p style="font-size:13px;color:var(--text-secondary);">Aún no hay datos.</p>';
 }
-</span>
-        <div>
-          <div class="si-title">${s.cantidad}${s.tamano ? ' · ' + s.tamano : ''}${s.comportamiento ? ' · ' + s.comportamiento : ''}</div>
-          <div class="si-meta">${s.student_name || 'Anónimo'} · ${s.hora} · ${(s.created_at || '').slice(11, 16)}${s.observaciones ? ' · ' + s.observaciones.slice(0, 45) : ''}</div>
-        </div>
-      </div>`).join('');
-  } else {
-    list.style.display = 'none';
-  }
 
-  // Report data
-  document.getElementById('r-total').textContent = stats.total;
-  document.getElementById('r-hoy').textContent = stats.today;
-  document.getElementById('r-zonas').textContent = stats.zones;
-  const th = Object.entries(stats.hourDetail || {}).sort((a, b) => b[1] - a[1])[0];
-  document.getElementById('r-hora').textContent = th ? th[0].split('(')[0].trim() : '-';
-
-  const zd = stats.zoneDetail || {};
-  const mz = Math.max(...Object.values(zd), 1);
-  document.getElementById('zona-bars').innerHTML = Object.keys(zd).length
-    ? Object.entries(zd).sort((a, b) => b[1] - a[1]).map(([z, c]) =>
-        `<div class="brow"><span class="blabel">${z.slice(0, 18)}</span><div class="btrack"><div class="bfill" style="width:${Math.round(c / mz * 100)}%"></div></div><span class="bcount">${c}</span></div>`).join('')
-    : '<p style="font-size:13px;color:var(--text-secondary);">Aún no hay datos.</p>';
-
-  const cd = stats.compDetail || {};
-  const mc = Math.max(...Object.values(cd), 1);
-  document.getElementById('comp-bars').innerHTML = Object.keys(cd).length
-    ? Object.entries(cd).sort((a, b) => b[1] - a[1]).map(([c, n]) =>
-        `<div class="brow"><span class="blabel">${c}</span><div class="btrack"><div class="bfill" style="width:${Math.round(n / mc * 100)}%"></div></div><span class="bcount">${n}</span></div>`).join('')
-    : '<p style="font-size:13px;color:var(--text-secondary);">Aún no hay datos.</p>';
-}
 
 // ── Init ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
