@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-function resolveHostIPv4(string $host): string {
-  $records = dns_get_record($host, DNS_A);
-  if (!empty($records)) {
-    return $records[0]['ip'];
+function resolveHostIPv4(string $host): ?string {
+  if (filter_var($host, FILTER_VALIDATE_IP)) {
+    return $host;
   }
-  return $host;
+  $ip = gethostbyname($host);
+  return $ip !== $host ? $ip : null;
 }
 
 function getDB(): PDO {
@@ -22,7 +22,8 @@ function getDB(): PDO {
       $user   = $parts['user'] ?? 'postgres';
       $pass   = $parts['pass'] ?? '';
       $hostaddr = resolveHostIPv4($host);
-      $dsn = "pgsql:hostaddr=$hostaddr;port=$port;dbname=$dbname;sslmode=require";
+      $connHost = $hostaddr !== null ? "hostaddr=$hostaddr" : "host=$host";
+      $dsn = "pgsql:$connHost;port=$port;dbname=$dbname;sslmode=require";
     } else {
       $host   = getenv('DB_HOST') ?: 'localhost';
       $port   = getenv('DB_PORT') ?: '5432';
@@ -31,7 +32,8 @@ function getDB(): PDO {
       $pass   = getenv('DB_PASS') ?: '';
       $sslmode = getenv('DB_SSLMODE') ?: 'prefer';
       $hostaddr = resolveHostIPv4($host);
-      $dsn = "pgsql:hostaddr=$hostaddr;port=$port;dbname=$dbname;sslmode=$sslmode";
+      $connHost = $hostaddr !== null ? "hostaddr=$hostaddr" : "host=$host";
+      $dsn = "pgsql:$connHost;port=$port;dbname=$dbname;sslmode=$sslmode";
     }
 
     $pdo = new PDO($dsn, $user, $pass, [
