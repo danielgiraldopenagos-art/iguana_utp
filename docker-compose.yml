@@ -1,51 +1,32 @@
-# Entorno local con MySQL + phpMyAdmin
-# Para desarrollo sin PlanetScale.
-#
-# Usar: docker compose up -d
-# Luego conectar con:
-#   Host: localhost
-#   Puerto: 3307
-#   DB: iguanautp
-#   User: iguana
-#   Pass: iguana123
-#
-# phpMyAdmin: http://localhost:8081 (root/iguana123)
-#
-# Para servir la app: php -S 0.0.0.0:8080 -t .
-
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     container_name: iguana-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: iguana123
-      MYSQL_DATABASE: iguanautp
-      MYSQL_USER: iguana
-      MYSQL_PASSWORD: iguana123
+      POSTGRES_DB: iguanautp
+      POSTGRES_USER: iguana
+      POSTGRES_PASSWORD: iguana123
     ports:
-      - "3307:3306"
+      - "5432:5432"
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/postgresql/data
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-piguana123"]
+      test: ["CMD-SHELL", "pg_isready -U iguana -d iguanautp"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: iguana-pma
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: iguana-pgadmin
     restart: unless-stopped
     depends_on:
       - db
     environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: iguana123
-      UPLOAD_LIMIT: 64M
+      PGADMIN_DEFAULT_EMAIL: admin@iguana.utp
+      PGADMIN_DEFAULT_PASSWORD: iguana123
     ports:
       - "8081:80"
 

@@ -9,31 +9,26 @@ function getDB(): PDO {
     if ($url) {
       $parts = parse_url($url);
       $host   = $parts['host'] ?? 'localhost';
-      $port   = $parts['port'] ?? 3306;
+      $port   = $parts['port'] ?? 5432;
       $dbname = ltrim($parts['path'] ?? '', '/') ?: 'iguanautp';
-      $user   = $parts['user'] ?? 'root';
+      $user   = $parts['user'] ?? 'postgres';
       $pass   = $parts['pass'] ?? '';
-      $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+      $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=require";
     } else {
       $host   = getenv('DB_HOST') ?: 'localhost';
-      $port   = getenv('DB_PORT') ?: '3306';
+      $port   = getenv('DB_PORT') ?: '5432';
       $dbname = getenv('DB_NAME') ?: 'iguanautp';
-      $user   = getenv('DB_USER') ?: 'root';
+      $user   = getenv('DB_USER') ?: 'postgres';
       $pass   = getenv('DB_PASS') ?: '';
-      $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+      $sslmode = getenv('DB_SSLMODE') ?: 'prefer';
+      $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=$sslmode";
     }
 
-    $opts = [
+    $pdo = new PDO($dsn, $user, $pass, [
       PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
       PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
       PDO::ATTR_EMULATE_PREPARES   => false,
-    ];
-
-    if (getenv('DATABASE_URL') || getenv('MYSQL_SSL') === 'true') {
-      $opts[PDO::MYSQL_ATTR_SSL_CA] = getenv('MYSQL_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
-    }
-
-    $pdo = new PDO($dsn, $user, $pass, $opts);
+    ]);
   }
   return $pdo;
 }

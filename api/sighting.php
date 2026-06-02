@@ -87,7 +87,7 @@ $stmt = $db->prepare('
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ');
 $stmt->execute([$studentId, $zone, $hora, $cantidad, $tamano, $comp, $obs, $fecha ?: null]);
-$id = (int)$db->lastInsertId();
+$id = (int)$db->lastInsertId('sightings_id_seq');
 
 jsonResponse([
   'id' => $id,

@@ -48,7 +48,7 @@ if ($existing) {
 // Register new student
 $stmt = $db->prepare('INSERT INTO students (name, email) VALUES (?, ?)');
 $stmt->execute([$name, $email]);
-$id = (int)$db->lastInsertId();
+$id = (int)$db->lastInsertId('students_id_seq');
 
 jsonResponse([
   'student' => ['id' => $id, 'name' => $name, 'email' => $email],
